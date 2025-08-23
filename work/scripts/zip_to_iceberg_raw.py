@@ -3,7 +3,7 @@ from pathlib import Path
 from pyspark.sql import SparkSession
 from pyspark.sql.functions import current_timestamp
 
-ZIP_DIR      = Path(os.environ.get("ZIP_DIR", "/home/glazole/msij-project/archives"))
+ZIP_DIR      = Path(os.environ.get("ZIP_DIR", "/win_df"))
 CSV_SEP      = os.environ.get("CSV_SEP", ",")
 CSV_HEADER   = os.environ.get("CSV_HEADER", "true")
 INFER_SCHEMA = os.environ.get("INFER_SCHEMA", "true")
