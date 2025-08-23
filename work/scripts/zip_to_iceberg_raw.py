@@ -8,7 +8,7 @@ CSV_SEP      = os.environ.get("CSV_SEP", ",")
 CSV_HEADER   = os.environ.get("CSV_HEADER", "true")
 INFER_SCHEMA = os.environ.get("INFER_SCHEMA", "true")
 CSV_ENCODING = os.environ.get("CSV_ENCODING", "UTF-8")
-TABLE_NAME   = os.environ.get("TABLE_NAME", "bronze.crpt_2025_raw")
+TABLE_NAME   = os.environ.get("TABLE_NAME", "ice.bronze.crpt_2025_raw")
 
 # --- STREAM COPY: копируем по кускам, без чтения (.read()) всего файла ---
 def first_csv_from_zip(zp: Path, dst_dir: Path) -> Path | None:
@@ -53,11 +53,14 @@ if __name__ == "__main__":
     total = len(zip_paths)
     print(f"👉 [INFO] Found {total} zip files in {ZIP_DIR}", flush=True)
     if total == 0:
+        print("🙅‍♂️ Archives are not found — do not create anything, exit")
         spark.stop(); sys.exit(0)
+    
+    spark.sql("CREATE NAMESPACE IF NOT EXISTS ice.bronze")
 
     # создаем таблицу iceberg для логов, если ее нет
     spark.sql("""
-        CREATE TABLE IF NOT EXISTS bronze.crpt_load_log (
+        CREATE TABLE IF NOT EXISTS ice.bronze.crpt_load_log (
           zip_name string,
           loaded_at timestamp
         ) USING iceberg
@@ -72,7 +75,7 @@ if __name__ == "__main__":
             name = zp.name
             esc = name.replace("'", "''")
             already = spark.sql(
-                f"SELECT 1 FROM bronze.crpt_load_log WHERE zip_name='{esc}' LIMIT 1"
+                f"SELECT 1 FROM ice.bronze.crpt_load_log WHERE zip_name='{esc}' LIMIT 1"
             ).count() > 0
             if already:
                 # если уже загружали, то пропускаем
@@ -111,7 +114,7 @@ if __name__ == "__main__":
             # записываем имя файла в лог
             (spark.createDataFrame([(name,)], ["zip_name"])
                  .withColumn("loaded_at", current_timestamp())
-                 .writeTo("bronze.crpt_load_log").append())
+                 .writeTo("ice.bronze.crpt_load_log").append())
 
             processed += 1
             print(f"[DONE  {i}/{total}] {name}", flush=True)
@@ -130,7 +133,7 @@ if __name__ == "__main__":
             except Exception:
                 pass
     # логируем общее количество обработанных файлов и записанных строк в консоль
-    logged = spark.sql("SELECT COUNT(*) AS c FROM bronze.crpt_load_log").first()["c"]
+    logged = spark.sql("SELECT COUNT(*) AS c FROM ice.bronze.crpt_load_log").first()["c"]
     print("===== SUMMARY =====", flush=True)
     print(f"found      : {total}", flush=True)
     print(f"processed  : {processed}", flush=True)
