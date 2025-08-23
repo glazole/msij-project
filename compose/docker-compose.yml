@@ -18,10 +18,19 @@ services:
         condition: service_healthy
     entrypoint: >
       /bin/sh -c "
-      until curl -sf http://minio:9000/minio/health/ready >/dev/null; do sleep 1; done &&
-      mc alias set local http://minio:9000 minio minio_minio &&
-      mc mb -p local/raw local/stage local/warehouse || true &&
-      tail -f /dev/null
+      set -euxo pipefail
+      # 1) Регистрируем алиас
+      mc alias set local http://minio:9000 minio minio_minio
+      # 2) Ждём, пока сервер реально отвечает
+      until mc ls local >/dev/null 2>&1; do
+        echo "waiting for MinIO..."; sleep 1;
+      done
+      # 3) Создаём бакеты идемпотентно
+      mc mb --ignore-existing local/raw
+      mc mb --ignore-existing local/stage
+      mc mb --ignore-existing local/warehouse
+      # 4) Показываем, что получилось
+      mc ls local
       "
     restart: "no"
 
