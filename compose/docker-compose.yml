@@ -54,7 +54,7 @@ services:
   
 
   spark-worker:
-    build: ./docker/spark
+    # build: ./docker/spark
     image: local/spark:3.5.0-aws34-ice161
     container_name: spark-worker
     hostname: spark-worker
