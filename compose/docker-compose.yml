@@ -50,6 +50,7 @@ services:
     volumes:
       - /home/glazole/msij-project/conf/spark:/opt/bitnami/spark/conf
       - /home/glazole/msij-project/work:/work
+      - /mnt/e/crpt_2025:/win_df
   
 
   spark-worker:
@@ -78,6 +79,7 @@ services:
     volumes:
       - /home/glazole/msij-project/conf/spark:/opt/bitnami/spark/conf
       - /home/glazole/msij-project/work:/work
+      - /mnt/e/crpt_2025:/win_df
 
   jupyter:
     build: ./docker/jupyter
