@@ -9,7 +9,7 @@ services:
       MINIO_ROOT_PASSWORD: minio_minio
     ports: ["9000:9000","9001:9001"]
     volumes:
-      - /home/glazole/first/data/drug-forecast/minio:/data
+      - /home/glazole/msij-project/minio:/data
 
   mc:
     image: minio/mc:latest
@@ -49,8 +49,8 @@ services:
       - "7077:7077"   # Spark master
       - "8080:8080"   # Spark UI (master)
     volumes:
-      - /home/glazole/first/data/drug-forecast/conf/spark:/opt/bitnami/spark/conf
-      - /home/glazole/first/data/drug-forecast/work:/work
+      - /home/glazole/msij-project/conf/spark:/opt/bitnami/spark/conf
+      - /home/glazole/msij-project/work:/work
   
 
   spark-worker:
@@ -77,8 +77,8 @@ services:
     ports:
       - "8081:8081"   # UI воркера (опционально)
     volumes:
-      - /home/glazole/first/data/drug-forecast/conf/spark:/opt/bitnami/spark/conf
-      - /home/glazole/first/data/drug-forecast/work:/work
+      - /home/glazole/msij-project/conf/spark:/opt/bitnami/spark/conf
+      - /home/glazole/msij-project/work:/work
 
   jupyter:
     build: ./docker/jupyter
@@ -124,8 +124,8 @@ services:
         --ServerApp.token=$$JUPYTER_TOKEN
       "
     volumes:
-      - /home/glazole/first/data/drug-forecast/conf/spark:/opt/bitnami/spark/conf
-      - /home/glazole/first/data/drug-forecast/work:/work
+      - /home/glazole/msij-project/conf/spark:/opt/bitnami/spark/conf
+      - /home/glazole/msij-project/work:/work
 
 volumes:
   spark-logs:
