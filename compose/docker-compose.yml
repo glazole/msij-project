@@ -18,15 +18,15 @@ services:
         condition: service_healthy
     entrypoint: >
       /bin/sh -c "
-      # Сначала устанавливаем алиас
+      # Ждем немного чтобы MinIO точно запустился
+      sleep 5;
+      # Устанавливаем алиас
       mc alias set local http://minio:9000 minio minio_minio;
-      # Ждем пока MinIO станет доступным
-      until mc ready local; do echo 'Waiting for MinIO...'; sleep 2; done;
       # Создаем бакеты
-      mc mb -p local/raw || true;
-      mc mb -p local/stage || true;
-      mc mb -p local/warehouse || true;
-      echo 'Buckets created successfully';
+      mc mb local/raw || true;
+      mc mb local/stage || true;
+      mc mb local/warehouse || true;
+      echo 'Buckets created';
       tail -f /dev/null
       "
     restart: "no"
