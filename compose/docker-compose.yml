@@ -1,0 +1,132 @@
+services:
+  minio:
+    image: minio/minio:latest
+    command: server /data --console-address ":9001"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://minio:9000/minio/health/ready"]
+    environment:
+      MINIO_ROOT_USER: minio
+      MINIO_ROOT_PASSWORD: minio_minio
+    ports: ["9000:9000","9001:9001"]
+    volumes:
+      - /home/glazole/first/data/drug-forecast/minio:/data
+
+  mc:
+    image: minio/mc:latest
+    depends_on:
+      minio:
+        condition: service_healthy
+    entrypoint: >
+      /bin/sh -c "
+      until curl -sf http://minio:9000/minio/health/ready >/dev/null; do sleep 1; done &&
+      mc alias set local http://minio:9000 minio minio_minio &&
+      mc mb -p local/raw local/stage local/warehouse || true &&
+      tail -f /dev/null
+      "
+    restart: "no"
+
+  spark-master:
+    build: ./docker/spark
+    image: local/spark:3.5.0-aws34-ice161
+    container_name: spark-master
+    hostname: spark-master
+    depends_on:
+      minio:
+        condition: service_healthy
+      mc:
+        condition: service_started
+    environment:
+      SPARK_MODE: master
+      SPARK_RPC_AUTHENTICATION_ENABLED: no
+      SPARK_RPC_ENCRYPTION_ENABLED: no
+      SPARK_MASTER_HOST: spark-master
+      SPARK_MASTER_PORT: 7077
+      SPARK_UI_PORT: 8080
+      AWS_ACCESS_KEY_ID: minio
+      AWS_SECRET_ACCESS_KEY: minio_minio
+      AWS_EC2_METADATA_DISABLED: "true"
+    ports:
+      - "7077:7077"   # Spark master
+      - "8080:8080"   # Spark UI (master)
+    volumes:
+      - /home/glazole/first/data/drug-forecast/conf/spark:/opt/bitnami/spark/conf
+      - /home/glazole/first/data/drug-forecast/work:/work
+  
+
+  spark-worker:
+    build: ./docker/spark
+    image: local/spark:3.5.0-aws34-ice161
+    container_name: spark-worker
+    hostname: spark-worker
+    depends_on:
+      spark-master:
+        condition: service_started
+    environment:
+      SPARK_MODE: worker
+      SPARK_MASTER_URL: spark://spark-master:7077
+      SPARK_WORKER_MEMORY: 4G
+      SPARK_WORKER_CORES: 2
+      AWS_ACCESS_KEY_ID: minio
+      AWS_SECRET_ACCESS_KEY: minio_minio
+      AWS_EC2_METADATA_DISABLED: "true"
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 5G
+    ports:
+      - "8081:8081"   # UI воркера (опционально)
+    volumes:
+      - /home/glazole/first/data/drug-forecast/conf/spark:/opt/bitnami/spark/conf
+      - /home/glazole/first/data/drug-forecast/work:/work
+
+  jupyter:
+    build: ./docker/jupyter
+    image: local/jupyter-spark:3.5.0-aws34-ice161
+    container_name: jupyter
+    hostname: jupyter
+    depends_on:
+      spark-master:
+        condition: service_started
+    ports:
+      - "8888:8888"
+      - "4040:4040"
+      - "4041:4041"
+      - "4042:4042"
+    working_dir: /work  
+    environment:
+      JUPYTER_TOKEN: "lab"
+      AWS_ACCESS_KEY_ID: minio
+      AWS_SECRET_ACCESS_KEY: minio_minio
+      AWS_EC2_METADATA_DISABLED: "true"
+      HOME: /work
+      JUPYTER_CONFIG_DIR: /work/.jupyter
+      JUPYTER_DATA_DIR: /work/.jupyter
+      JUPYTER_RUNTIME_DIR: /work/.jupyter/runtime
+      JUPYTERLAB_WORKSPACES_DIR: /work/.jupyter/lab/workspaces
+      SPARK_SUBMIT_OPTS: "-Dfs.s3a.metrics.skip=true"
+      PYSPARK_SUBMIT_ARGS: >
+        --master spark://spark-master:7077
+        --conf spark.driver.bindAddress=0.0.0.0
+        --conf spark.driver.host=jupyter
+        pyspark-shell
+    command: >
+      bash -c "
+        mkdir -p /work/.jupyter/lab/workspaces /work/.jupyter/lab/user-settings /work/.jupyter/runtime &&
+      chown -R 1001:1001 /work/.jupyter &&
+      jupyter lab --ip=0.0.0.0 --no-browser
+        --NotebookApp.notebook_dir=/work
+        --notebook-dir=/work
+        --ServerApp.root_dir=/work
+        --ServerApp.workspaces_dir=/work/.jupyter/lab/workspaces
+        --ServerApp.user_settings_dir=/work/.jupyter/lab/user-settings
+        --ServerApp.runtime_dir=/work/.jupyter/runtime
+        --ServerApp.token=$$JUPYTER_TOKEN
+      "
+    volumes:
+      - /home/glazole/first/data/drug-forecast/conf/spark:/opt/bitnami/spark/conf
+      - /home/glazole/first/data/drug-forecast/work:/work
+
+volumes:
+  spark-logs:
+  minio-data:
