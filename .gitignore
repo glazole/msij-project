@@ -1,19 +1,19 @@
 /archives
-# Игнорировать всё в conf/spark, кроме spark-defaults.conf
+
+# --- conf/spark: игнорировать всё, кроме spark-defaults.conf
 conf/spark/*
 !conf/spark/spark-defaults.conf
 
-# Игнорировать всё в work, кроме notebooks
-work/*
-!work/notebooks/
-!work/scripts/
-work/notebooks/*
-work/scripts/*
-
-# Игнорировать всё в minio
+# --- minio: полностью игнорировать
 minio/
 
-# Игнорировать скрытые системные папки Jupyter и IPython
+# --- work: игнорировать всё, кроме notebooks и scripts
+work/*
+!work/notebooks/
+!work/notebooks/*
+!work/scripts/
+!work/scripts/*
+
+# --- скрытые системные папки Jupyter/IPython — всё равно игнорируем
 work/.ipython/
 work/.jupyter/
-
