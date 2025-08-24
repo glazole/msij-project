@@ -64,7 +64,7 @@ msij-project/
 
 ## 🐳 2. Docker Compose архитектура (MinIO, Spark, Jupyter)
 
-**Файл:** `docker-compose.yml`
+**Файл:** [`docker-compose.yml`](./compose/docker-compose.yml)
 
 ```yaml
 services:
@@ -116,7 +116,7 @@ volumes:
 ---
 ## ⚙️ 3. Конфигурация Spark
 
-**Файл:** `spark-defaults.conf`
+**Файл:** [`spark-defaults.conf`](./conf/spark/spark-defaults.conf)
 
 ```conf
 # Кластер
@@ -154,7 +154,7 @@ spark.executor.extraJavaOptions           -Duser.name=spark
 ```
 ---
 
-### 📘 Назначение файла `spark-defaults.conf`
+### 📘 Назначение файла [`spark-defaults.conf`](./conf/spark/spark-defaults.conf)
 
 Файл `spark-defaults.conf` содержит ключевые параметры настройки Spark, применяемые по умолчанию при запуске сессий как в Jupyter, так и из CLI. Он нужен для:
 
@@ -482,7 +482,7 @@ Jupyter на порту `8888` — основной интерфейс для з
 
 ## 📦 6. Скрипт загрузки ZIP-архивов в Iceberg
 
-**Файл:** [`zip_to_iceberg_raw.py`](#)
+**Файл:** [`zip_to_iceberg_raw.py`](./work/scripts/zip_to_iceberg_raw.py)
 
 ### 🔄 Алгоритм:
 
