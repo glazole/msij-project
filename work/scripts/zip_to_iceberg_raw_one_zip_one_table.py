@@ -59,6 +59,16 @@ if __name__ == "__main__":
         ) USING iceberg
     """)
 
+    MAPPING = {
+        "Таблица_4": "f4_sprav_gtin",
+        "Таблица_5": "f5_sprav_md",
+        "Таблица_6": "f6_sprav_players",
+        "Таблица_7": "f7_sprav_gtin_vac",
+        "Нанесения_ввод": "f1_manuf_import"
+    }
+
+    prefixes_pattern = "|".join(re.escape(k) for k in MAPPING)
+
     processed = skipped = failed = 0
     for i, zp in enumerate(zip_paths, 1):
         try:
@@ -66,8 +76,21 @@ if __name__ == "__main__":
             # table_suffix = sanitize_table_name(zp.stem)
             # table_name = f"ice.bronze.{table_suffix}"
             # Исправляем имя таблицы, чтобы оно было допустимым для Iceberg (без пробелов и спец. символов, и кириллицы)
-            table_suffix = safe_ascii_name(zp.name)  # используй имя архива
+            filename = zp.stem  # имя без .zip
+            prefix_match = re.match(f"^({prefixes_pattern})", filename)
+
+            if prefix_match:
+                prefix = prefix_match.group(1)
+                table_suffix = MAPPING[prefix]
+            else:
+                table_suffix = safe_ascii_name(filename)
+
+            # ⛑ fallback: если имя оказалось пустым
+            if not table_suffix:
+                table_suffix = "tbl_" + re.sub(r"[^a-z0-9]", "", hex(abs(hash(filename)))[2:])[:8]
+
             table_name = f"ice.bronze.{table_suffix}"
+            print(f"📦 Using table: {table_name}", flush=True)
 
             esc = name.replace("'", "''")
 
@@ -87,10 +110,16 @@ if __name__ == "__main__":
                 skipped += 1
                 continue
 
+            # ⛔ Пустой CSV — пропускаем
+            if csv_path.stat().st_size == 0:
+                print(f"[WARN  {i}/{total}] {name}: CSV file is empty → skip", flush=True)
+                skipped += 1
+                continue
+
             size_mb = round(csv_path.stat().st_size / (1024*1024), 2)
             print(f"[EXTRACT {i}/{total}] -> {csv_path.name} ({size_mb} MB)", flush=True)
             print(f"✅ [CHECK] File exists: {csv_path.exists()} — {csv_path}")
-            print(f"🧭 [URI] {csv_path.absolute()}")
+            print(f"🧭 [ABS PATH] {csv_path.absolute()}")
 
             df = (spark.read
                     .option("sep", CSV_SEP)
@@ -99,8 +128,10 @@ if __name__ == "__main__":
                     .option("encoding", CSV_ENCODING)
                     .csv(str(csv_path.absolute()))
             )
+
             print(f"📦 Using table: {table_name}", flush=True)
-            table_exists = spark._jsparkSession.catalog().tableExists(table_name)
+            table_exists = spark.catalog.tableExists(table_name)
+
 
             if not table_exists:
                 df.writeTo(table_name).create()
@@ -110,8 +141,8 @@ if __name__ == "__main__":
             print(f"👉 [APPEND] {name} -> {table_name}", flush=True)
 
             (spark.createDataFrame([(name, table_name)], ["zip_name", "table_name"])
-                 .withColumn("loaded_at", current_timestamp())
-                 .writeTo("ice.bronze.crpt_load_log").append())
+                    .withColumn("loaded_at", current_timestamp())
+                    .writeTo("ice.bronze.crpt_load_log").append())
 
             processed += 1
             print(f"[DONE  {i}/{total}] {name}", flush=True)
