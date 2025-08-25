@@ -139,7 +139,7 @@ if __name__ == "__main__":
             df.writeTo(table_name).append()
             print(f"👉 [APPEND] {name} -> {table_name}", flush=True)
 
-            (spark.createDataFrame([(name, table_name)], ["zip_name"])
+            (spark.createDataFrame([(name)], ["zip_name"])
                     .withColumn("loaded_at", current_timestamp())
                     .writeTo("ice.bronze.crpt_load_log").append())
 
