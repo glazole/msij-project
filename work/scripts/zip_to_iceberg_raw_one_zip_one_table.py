@@ -108,13 +108,17 @@ if __name__ == "__main__":
             print(f"✅ [CHECK] File exists: {csv_path.exists()} — {csv_path}")
             print(f"🧭 [ABS PATH] {csv_path.absolute()}")
 
-            df = (spark.read
+            df = (
+                spark.read
                     .option("sep", CSV_SEP)
                     .option("header", CSV_HEADER)
-                    .option("inferSchema", INFER_SCHEMA)
-                    .option("encoding", CSV_ENCODING)
+                    .option("encoding", "windows-1251")
+                    .option("mode", "PERMISSIVE")
+                    .option("nullValue", "")        # Пустые ячейки станут null
+                    .option("emptyValue", "")       # Явно задаём, как обрабатывать пустые значения
                     .csv(str(csv_path.absolute()))
             )
+
 
             print(f"📦 Using table: {table_name}", flush=True)
             table_exists = spark.catalog.tableExists(table_name)
