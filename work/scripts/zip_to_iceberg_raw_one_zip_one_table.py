@@ -1,4 +1,4 @@
-import os, zipfile, tempfile, traceback, sys, shutil
+import os, zipfile, tempfile, traceback, sys, shutil, unicodedata, re
 from pathlib import Path
 from pyspark.sql import SparkSession
 from pyspark.sql.functions import current_timestamp
@@ -8,6 +8,18 @@ CSV_SEP      = os.environ.get("CSV_SEP", ",")
 CSV_HEADER   = os.environ.get("CSV_HEADER", "true")
 INFER_SCHEMA = os.environ.get("INFER_SCHEMA", "true")
 CSV_ENCODING = os.environ.get("CSV_ENCODING", "UTF-8")
+
+def strip_accents(text):
+    return ''.join(c for c in unicodedata.normalize('NFD', text) if unicodedata.category(c) != 'Mn')
+
+def safe_ascii_name(name: str) -> str:
+    base = Path(name).stem
+    base = strip_accents(base)
+    base = base.encode("ascii", errors="ignore").decode()
+    base = base.lower()
+    base = base.replace(" ", "_").replace("-", "_").replace(".", "_")
+    return re.sub(r"[^a-z0-9_]", "", base)
+
 
 def sanitize_table_name(name: str) -> str:
     """Преобразует имя архива в допустимое имя таблицы"""
@@ -51,8 +63,12 @@ if __name__ == "__main__":
     for i, zp in enumerate(zip_paths, 1):
         try:
             name = zp.name
-            table_suffix = sanitize_table_name(zp.stem)
+            # table_suffix = sanitize_table_name(zp.stem)
+            # table_name = f"ice.bronze.{table_suffix}"
+            # Исправляем имя таблицы, чтобы оно было допустимым для Iceberg (без пробелов и спец. символов, и кириллицы)
+            table_suffix = safe_ascii_name(zp.name)  # используй имя архива
             table_name = f"ice.bronze.{table_suffix}"
+
             esc = name.replace("'", "''")
 
             already = spark.sql(
@@ -83,7 +99,7 @@ if __name__ == "__main__":
                     .option("encoding", CSV_ENCODING)
                     .csv(str(csv_path.absolute()))
             )
-
+            print(f"📦 Using table: {table_name}", flush=True)
             table_exists = spark._jsparkSession.catalog().tableExists(table_name)
 
             if not table_exists:
