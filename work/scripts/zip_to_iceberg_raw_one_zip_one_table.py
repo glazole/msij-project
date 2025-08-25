@@ -106,18 +106,24 @@ if __name__ == "__main__":
             size_mb = round(csv_path.stat().st_size / (1024*1024), 2)
             print(f"[EXTRACT {i}/{total}] -> {csv_path.name} ({size_mb} MB)", flush=True)
             print(f"✅ [CHECK] File exists: {csv_path.exists()} — {csv_path}")
-            print(f"🧭 [ABS PATH] {csv_path.absolute()}")
+            print(f"🧭 [ABS PATH] {csv_path.absolute().as_posix()}")
 
-            df = (
-                spark.read
+            try:
+                # Явное чтение с windows-1251 + permissive + пустые значения
+                df = (
+                    spark.read
                     .option("sep", CSV_SEP)
                     .option("header", CSV_HEADER)
                     .option("encoding", "windows-1251")
                     .option("mode", "PERMISSIVE")
-                    .option("nullValue", "")        # Пустые ячейки станут null
-                    .option("emptyValue", "")       # Явно задаём, как обрабатывать пустые значения
-                    .csv(str(csv_path.absolute()))
-            )
+                    .option("nullValue", "")
+                    .option("emptyValue", "")
+                    .csv(str(csv_path.absolute().as_posix()))
+                )
+                print(f"✅ CSV прочитан: {csv_path.name}")
+            except Exception as e:
+                print(f"❌ Ошибка при чтении CSV: {csv_path.name}")
+                print(e)
 
 
             print(f"📦 Using table: {table_name}", flush=True)
