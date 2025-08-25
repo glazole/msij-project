@@ -77,6 +77,7 @@ if __name__ == "__main__":
                     .option("inferSchema", INFER_SCHEMA)
                     .option("encoding", CSV_ENCODING)
                     .csv(csv_path.as_uri())
+            )
 
             table_exists = spark._jsparkSession.catalog().tableExists(table_name)
 
