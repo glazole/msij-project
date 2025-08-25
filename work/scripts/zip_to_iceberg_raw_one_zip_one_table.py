@@ -20,11 +20,6 @@ def safe_ascii_name(name: str) -> str:
     base = base.replace(" ", "_").replace("-", "_").replace(".", "_")
     return re.sub(r"[^a-z0-9_]", "", base)
 
-
-def sanitize_table_name(name: str) -> str:
-    """Преобразует имя архива в допустимое имя таблицы"""
-    return name.lower().replace("-", "_").replace(".", "_")
-
 def first_csv_from_zip(zp: Path, dst_dir: Path) -> Path | None:
     with zipfile.ZipFile(zp, "r") as z:
         names = [n for n in z.namelist() if n.lower().endswith(".csv")]
@@ -32,14 +27,13 @@ def first_csv_from_zip(zp: Path, dst_dir: Path) -> Path | None:
             print(f"⚠️  {zp.name} — no CSV found in archive", flush=True)
             return None
         src = names[0]
-        filename_inside = Path(src).name  # <- корректное имя файла
+        filename_inside = Path(src).name
         dst_path = dst_dir / filename_inside
         with z.open(src, "r") as fin, open(dst_path, "wb") as fout:
             shutil.copyfileobj(fin, fout, length=16 * 1024 * 1024)
         size = dst_path.stat().st_size
         print(f"📄 Extracted: {dst_path.name} — size: {round(size/1024, 2)} KB", flush=True)
         return dst_path
-
 
 if __name__ == "__main__":
     spark = SparkSession.builder.appName("zip->iceberg(split)").getOrCreate()
@@ -72,10 +66,7 @@ if __name__ == "__main__":
     for i, zp in enumerate(zip_paths, 1):
         try:
             name = zp.name
-            # table_suffix = sanitize_table_name(zp.stem)
-            # table_name = f"ice.bronze.{table_suffix}"
-            # Исправляем имя таблицы, чтобы оно было допустимым для Iceberg (без пробелов и спец. символов, и кириллицы)
-            filename = zp.stem  # имя без .zip
+            filename = zp.stem
             prefix_match = re.match(f"^({prefixes_pattern})", filename)
 
             if prefix_match:
@@ -84,7 +75,6 @@ if __name__ == "__main__":
             else:
                 table_suffix = safe_ascii_name(filename)
 
-            # ⛑ fallback: если имя оказалось пустым
             if not table_suffix:
                 table_suffix = "tbl_" + re.sub(r"[^a-z0-9]", "", hex(abs(hash(filename)))[2:])[:8]
 
@@ -92,7 +82,6 @@ if __name__ == "__main__":
             print(f"📦 Using table: {table_name}", flush=True)
 
             esc = name.replace("'", "''")
-
             already = spark.sql(
                 f"SELECT 1 FROM ice.bronze.crpt_load_log WHERE zip_name='{esc}' LIMIT 1"
             ).count() > 0
@@ -109,7 +98,6 @@ if __name__ == "__main__":
                 skipped += 1
                 continue
 
-            # ⛔ Пустой CSV — пропускаем
             if csv_path.stat().st_size == 0:
                 print(f"[WARN  {i}/{total}] {name}: CSV file is empty → skip", flush=True)
                 skipped += 1
@@ -131,7 +119,6 @@ if __name__ == "__main__":
             print(f"📦 Using table: {table_name}", flush=True)
             table_exists = spark.catalog.tableExists(table_name)
 
-
             if not table_exists:
                 df.writeTo(table_name).create()
                 print(f"👉 [CREATE] {table_name}", flush=True)
@@ -139,9 +126,9 @@ if __name__ == "__main__":
             df.writeTo(table_name).append()
             print(f"👉 [APPEND] {name} -> {table_name}", flush=True)
 
-            (spark.createDataFrame([(name)], ["zip_name"])
-                    .withColumn("loaded_at", current_timestamp())
-                    .writeTo("ice.bronze.crpt_load_log").append())
+            (spark.createDataFrame([(name,)], ["zip_name"])
+                .withColumn("loaded_at", current_timestamp())
+                .writeTo("ice.bronze.crpt_load_log").append())
 
             processed += 1
             print(f"[DONE  {i}/{total}] {name}", flush=True)
