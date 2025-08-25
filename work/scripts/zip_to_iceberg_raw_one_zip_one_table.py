@@ -68,13 +68,15 @@ if __name__ == "__main__":
 
             size_mb = round(csv_path.stat().st_size / (1024*1024), 2)
             print(f"[EXTRACT {i}/{total}] -> {csv_path.name} ({size_mb} MB)", flush=True)
+            print(f"✅ [CHECK] File exists: {csv_path.exists()} — {csv_path}")
+            print(f"🧭 [URI] {csv_path.as_uri()}")
 
             df = (spark.read
                     .option("sep", CSV_SEP)
                     .option("header", CSV_HEADER)
                     .option("inferSchema", INFER_SCHEMA)
                     .option("encoding", CSV_ENCODING)
-                    .csv(str(csv_path)))
+                    .csv(csv_path.as_uri())
 
             table_exists = spark._jsparkSession.catalog().tableExists(table_name)
 
