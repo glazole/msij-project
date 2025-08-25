@@ -54,7 +54,6 @@ if __name__ == "__main__":
     spark.sql("""
         CREATE TABLE IF NOT EXISTS ice.bronze.crpt_load_log (
           zip_name string,
-          table_name string,
           loaded_at timestamp
         ) USING iceberg
     """)
