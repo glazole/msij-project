@@ -17,12 +17,17 @@ def first_csv_from_zip(zp: Path, dst_dir: Path) -> Path | None:
     with zipfile.ZipFile(zp, "r") as z:
         names = [n for n in z.namelist() if n.lower().endswith(".csv")]
         if not names:
+            print(f"⚠️  {zp.name} — no CSV found in archive", flush=True)
             return None
         src = names[0]
-        dst_path = dst_dir / f"{zp.stem}.csv"
+        filename_inside = Path(src).name  # <- корректное имя файла
+        dst_path = dst_dir / filename_inside
         with z.open(src, "r") as fin, open(dst_path, "wb") as fout:
             shutil.copyfileobj(fin, fout, length=16 * 1024 * 1024)
+        size = dst_path.stat().st_size
+        print(f"📄 Extracted: {dst_path.name} — size: {round(size/1024, 2)} KB", flush=True)
         return dst_path
+
 
 if __name__ == "__main__":
     spark = SparkSession.builder.appName("zip->iceberg(split)").getOrCreate()
