@@ -4,4 +4,5 @@ fastparquet==2024.5.0
 openpyxl==3.1.5
 pyiceberg==0.5.1
 pyspark==3.5.0
+graphframes-py==0.10.0
 boto3==1.35.63
