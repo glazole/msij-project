@@ -1,5 +1,5 @@
 # ./docker/spark/Dockerfile
-FROM docker.io/bitnami/spark:3.5.0
+FROM bitnami/spark:3.5.0
 USER root
 ENV SPARK_HOME=/opt/bitnami/spark
 
