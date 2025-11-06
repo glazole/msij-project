@@ -18,6 +18,10 @@ ADD https://repo1.maven.org/maven2/software/amazon/awssdk/s3/2.25.48/s3-2.25.48.
     $SPARK_HOME/jars/s3-2.25.48.jar
 ADD https://repo1.maven.org/maven2/software/amazon/awssdk/url-connection-client/2.25.48/url-connection-client-2.25.48.jar \
     $SPARK_HOME/jars/url-connection-client-2.25.48.jar
+# --- GraphFrames JAR ---
+# Совместим с Spark 3.5 и Scala 2.12 (тестировалось с Iceberg 1.6.1)
+ADD https://repo1.maven.org/maven2/graphframes/graphframes/0.8.3-spark3.4-s_2.12/graphframes-0.8.3-spark3.4-s_2.12.jar \
+    $SPARK_HOME/jars/graphframes-0.8.3-spark3.4-s_2.12.jar
 
 RUN chown -R 1001:0 "$SPARK_HOME/jars"
 # вернём права и пользователя

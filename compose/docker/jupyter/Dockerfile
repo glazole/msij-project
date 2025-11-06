@@ -31,7 +31,9 @@ RUN set -eux; \
     curl -fL -o $SPARK_HOME/jars/s3-2.25.48.jar \
       https://repo1.maven.org/maven2/software/amazon/awssdk/s3/2.25.48/s3-2.25.48.jar && \
     curl -fL -o $SPARK_HOME/jars/url-connection-client-2.25.48.jar \
-      https://repo1.maven.org/maven2/software/amazon/awssdk/url-connection-client/2.25.48/url-connection-client-2.25.48.jar
+      https://repo1.maven.org/maven2/software/amazon/awssdk/url-connection-client/2.25.48/url-connection-client-2.25.48.jar && \
+    curl -fL -o $SPARK_HOME/jars/graphframes-0.8.3-spark3.5.jar \
+      https://repo1.maven.org/maven2/graphframes/graphframes/0.8.3-spark3.5/graphframes-0.8.3-spark3.5.jar
 
 # вернём права и пользователя
 USER 1001
