@@ -27,7 +27,7 @@ services:
 
   spark-master:
     build: ./docker/spark
-    image: local/spark:3.5.0-aws34-ice161
+    image: local/spark-rest:3.5.0-aws34-ice161-rest160
     container_name: spark-master
     hostname: spark-master
     networks: [spark_network]
@@ -55,7 +55,7 @@ services:
       - /mnt/e/crpt_2025:/win_df
 
   spark-worker:
-    image: local/spark:3.5.0-aws34-ice161
+    image: local/spark-rest:3.5.0-aws34-ice161-rest160
     container_name: spark-worker
     hostname: spark-worker
     networks: [spark_network]
@@ -84,7 +84,7 @@ services:
 
   jupyter:
     build: ./docker/jupyter
-    image: local/jupyter-spark:3.5.0-aws34-ice161
+    image: local/jupyter-spark-rest:3.5.0-aws34-ice161-rest160
     container_name: jupyter
     hostname: jupyter
     networks: [spark_network]
