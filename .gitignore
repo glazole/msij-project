@@ -18,3 +18,7 @@ work/*
 # --- скрытые системные папки Jupyter/IPython — игнорировать
 work/.ipython/
 work/.jupyter/
+work/notebooks/.ipynb_checkpoints
+work/scripts/.ipynb_checkpoints
+.gitignore
+.dockerignore
