@@ -48,7 +48,8 @@ msij-project/
 │   │   │   └── Dockerfile
 │   │   └── jupyter/          # Dockerfile для Jupyter
 │   │       └── Dockerfile
-│   └── docker-compose.yml    # Основной файл запуска
+│   ├── docker-compose.yml    # Основной файл запуска
+│   └── requirements.txt      # Файл с зависимостями
 │
 ├── minio/                    # Локальное хранилище MinIO (бакеты)
 │
@@ -62,7 +63,9 @@ msij-project/
         └── ...
 ```
 
-## 🐳 2. Docker Compose архитектура (MinIO, Spark, Jupyter)
+---
+
+## 🐳 2. Docker Compose архитектура (MinIO, Spark, Iceberg REST, PostgreSQL, Jupyter) - обновление (ноябрь 2025)
 
 **Файл:** [`docker-compose.yml`](./compose/docker-compose.yml)
 
@@ -79,7 +82,7 @@ services:
     ...
   spark-master:
     build: ./docker/spark
-    image: local/spark:custom
+    image: local/spark-rest:3.5.0-aws34-ice161-rest160
     depends_on:
       minio:
         condition: service_healthy
@@ -87,70 +90,162 @@ services:
         condition: service_started
     ...
   spark-worker:
-    image: local/spark:custom
+    image: local/spark-rest:3.5.0-aws34-ice161-rest160
     depends_on:
       spark-master:
         condition: service_started
     ...
   jupyter:
     build: ./docker/jupyter
-    image: local/spark-jupyter:custom
+    image: local/jupyter-spark-rest:3.5.0-aws34-ice161-rest160
     depends_on:
       spark-master:
         condition: service_started
     ...
+  iceberg-rest:
+    image: tabulario/iceberg-rest:1.6.0
+    depends_on:
+      postgresql:
+        condition: service_healthy
+      spark-master:
+        condition: service_started
+    ...
+  postgresql:
+    image: postgres:15-alpine
+    ...
 volumes:
   spark-logs:
   minio-data:
+  pg_iceberg_data:
 ```
----
-* **minio** — объектное хранилище с интерфейсом S3, используется как backend для Iceberg.
-* **mc** — клиент MinIO, применяемый для инициализации бакетов и настройки доступа.
-* **spark-master** — управляющий узел кластера Spark, принимает подключения воркеров и задач.
-* **spark-worker** — рабочие узлы Spark, выполняют вычислительные задачи; используют тот же кастомный образ, что и мастер.
-* **jupyter** — веб-интерфейс для запуска Python-скриптов и ноутбуков, подключается к Spark через `spark://spark-master:7077`.
 
 ---
-📌 Все сервисы объединены в одну сеть, для хранения данных и логов определены тома `minio-data` и `spark-logs` — это упрощает локальную отладку и позволяет гибко настраивать пути `s3a://` и Spark Session изнутри Jupyter или .py-скриптов.
+
+### 🧩 Описание сервисов
+
+* **minio** — объектное S3-хранилище, используется Iceberg и Spark для хранения данных (`s3a://warehouse/iceberg/`).
+* **mc** — утилита MinIO, автоматически создаёт бакеты (`raw`, `stage`, `warehouse`) при запуске кластера.
+* **spark-master** — управляющий узел Spark-кластера (Spark 3.5.0 + Iceberg + AWS SDK v2 + GraphFrames).
+  Поддерживает подключение Iceberg REST и чтение/запись в MinIO.
+* **spark-worker** — рабочий узел Spark, использует тот же образ, что и мастер.
+  Выполняет вычисления и операции с Iceberg-таблицами.
+* **iceberg-rest** — сервис REST-каталога Apache Iceberg 1.6.1,
+  обеспечивает REST API для Spark и PyIceberg. Метаданные хранятся в PostgreSQL.
+* **postgresql** — метахранилище Iceberg Catalog (JDBC backend).
+  Создаётся база данных `iceberg_catalog` с пользователем `iceberg`.
+* **jupyter** — JupyterLab с предустановленным PySpark, PyIceberg, GraphFrames и S3-драйверами.
+  Использует `requirements.txt` для установки библиотек Python. Подключается к Spark по `spark://spark-master:7077`.
 
 ---
-## ⚙️ 3. Конфигурация Spark
+
+📌 Все сервисы работают в общей сети `spark_network`.
+Хранилища данных (`minio-data`, `pg_iceberg_data`, `spark-logs`) монтируются в контейнеры для удобства локальной разработки и анализа.
+Spark и Jupyter теперь полностью интегрированы с **Iceberg REST Catalog** и **GraphFrames**, что позволяет выполнять не только табличную, но и графовую аналитику на одних и тех же данных.
+
+---
+
+### 🔄 Обновления проекта (ноябрь 2025)
+
+**📦 Пересобранные образы:**
+
+* Обновлены образы `spark-master`, `spark-worker` и `jupyter` — теперь они содержат зависимости для **Iceberg REST Catalog** и **GraphFrames**.
+* В образы добавлены актуальные JAR-файлы:
+
+  * `iceberg-spark-runtime-3.5_2.12-1.6.1.jar`
+  * `graphframes-spark3_2.12-0.9.0-spark3.5.jar`
+  * AWS SDK v2 (`bundle`, `s3`, `url-connection-client`)
+
+**🗄 Добавлен сервис PostgreSQL:**
+
+* Новый контейнер `postgresql` используется как **JDBC-метахранилище** для Iceberg REST Catalog.
+* `iceberg-rest` теперь подключается к PostgreSQL по адресу
+  `jdbc:postgresql://postgresql:5432/iceberg_catalog`.
+
+**🧩 Файл `requirements.txt`:**
+
+* Добавлен в папку `compose/` и используется в Dockerfile для установки Python-зависимостей.
+* Содержит актуальные версии библиотек для Spark 3.5 и Iceberg 1.6:
+
+  ```
+  pandas==2.3.2
+  pyarrow==21.0.0
+  fastparquet==2024.5.0
+  openpyxl==3.1.5
+  pyiceberg==0.5.1
+  pyspark==3.5.0
+  graphframes-py==0.10.0
+  boto3==1.35.63
+  ```
+
+**🧠 GraphFrames:**
+
+* Поддержка графовых вычислений активирована через Python-пакет `graphframes-py` и соответствующий JAR.
+* Теперь доступны функции `GraphFrame(v, e)`, `inDegrees`, `shortestPaths` и др. внутри Jupyter-ноутбуков.
+
+---
+## ⚙️ 3. Конфигурация Spark - обновление (ноябрь 2025)
 
 **Файл:** [`spark-defaults.conf`](./conf/spark/spark-defaults.conf)
 
 ```conf
-# Кластер
+###############################################
+# Spark Defaults Configuration
+# Упрощённый и оптимизированный вариант
+###############################################
+
+# === Кластер ===
 spark.master                              spark://spark-master:7077
+spark.driver.bindAddress                  0.0.0.0
 spark.driver.host                         jupyter
 
-# S3A / MinIO
+# === S3A / MinIO ===
 spark.hadoop.fs.s3a.endpoint              http://minio:9000
-spark.hadoop.fs.s3a.access.key            minio
-spark.hadoop.fs.s3a.secret.key            minio_minio
 spark.hadoop.fs.s3a.path.style.access     true
 spark.hadoop.fs.s3a.connection.ssl.enabled false
+spark.hadoop.fs.s3a.impl                  org.apache.hadoop.fs.s3a.S3AFileSystem
+spark.hadoop.fs.s3a.access.key            minio
+spark.hadoop.fs.s3a.secret.key            minio_minio
 
-# Iceberg каталог
-spark.sql.extensions                      org.apache.iceberg.spark.extensions.IcebergSparkSessionExtensions
-spark.sql.catalog.ice                     org.apache.iceberg.spark.SparkCatalog
-spark.sql.catalog.ice.type                hadoop
-spark.sql.catalog.ice.warehouse           s3a://warehouse/iceberg/
-spark.sql.defaultCatalog                  ice
+##########################################################
+# === Iceberg Catalogs ===
+# Вариант 1 (Hadoop) — отключён по умолчанию
+##########################################################
+# spark.sql.extensions                      org.apache.iceberg.spark.extensions.IcebergSparkSessionExtensions
+# spark.sql.catalog.ice                     org.apache.iceberg.spark.SparkCatalog
+# spark.sql.catalog.ice.type                hadoop
+# spark.sql.catalog.ice.warehouse           s3a://warehouse/iceberg/
+# spark.sql.defaultCatalog                  ice
 
-# Производительность / ресурсы
-spark.serializer                          org.apache.spark.serializer.KryoSerializer
-spark.sql.shuffle.partitions              48
-spark.executor.instances                  1
-spark.executor.cores                      1
-spark.executor.memory                     2g
-spark.driver.memory                       3g
-spark.cores.max                           1
+##########################################################
+# Вариант 2 (REST) — активный
+##########################################################
+spark.sql.extensions                        org.apache.iceberg.spark.extensions.IcebergSparkSessionExtensions
+spark.sql.catalog.ice                       org.apache.iceberg.spark.SparkCatalog
+spark.sql.catalog.ice.type                  rest
+spark.sql.catalog.ice.uri                   http://iceberg-rest:8181
+spark.sql.catalog.ice.warehouse             s3a://warehouse/iceberg/
+spark.sql.catalog.ice.io-impl               org.apache.iceberg.aws.s3.S3FileIO
+spark.sql.catalog.ice.s3.endpoint           http://minio:9000
+spark.sql.catalog.ice.s3.path-style-access  true
+spark.sql.catalog.ice.s3.region             us-east-1
+spark.sql.catalog.ice.s3.access-key-id      minio
+spark.sql.catalog.ice.s3.secret-access-key  minio_minio
+spark.sql.defaultCatalog                    ice
 
-spark.dynamicAllocation.enabled           false
+# === Ресурсы и производительность ===
+spark.serializer                            org.apache.spark.serializer.KryoSerializer
+spark.sql.shuffle.partitions                48
+spark.executor.instances                    1
+spark.executor.cores                        1
+spark.executor.memory                       2g
+spark.driver.memory                         3g
+spark.cores.max                             1
+spark.dynamicAllocation.enabled             false
 
-# Отладочные параметры
-spark.driver.extraJavaOptions             -Duser.name=spark
-spark.executor.extraJavaOptions           -Duser.name=spark
+# === Прочее ===
+spark.driver.extraJavaOptions               -Duser.name=spark
+spark.executor.extraJavaOptions             -Duser.name=spark
+
 ```
 ---
 
@@ -208,11 +303,11 @@ Spark по умолчанию запускает **одного исполнит
 
 ```text
         Spark Cluster (на Docker или физическом кластере)
-        ┌────────────────────────────────────────────────────┐
-        │                                                    │
-        │  Spark Master                                      │
-        │                                                    │
-        └────────────────────────────────────────────────────┘
+        ┌────────────────────┐
+        │                    │
+        │  Spark Master      │
+        │                    │
+        └────────────────────┘
                    │
         ┌──────────┴────────────┐
         │                       │
