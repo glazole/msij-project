@@ -4,10 +4,11 @@ services:
     command: server /data --console-address ":9001"
     healthcheck:
       test: ["CMD", "curl", "-f", "http://minio:9000/minio/health/ready"]
+    networks: [spark_network]
     environment:
       MINIO_ROOT_USER: minio
       MINIO_ROOT_PASSWORD: minio_minio
-    ports: ["9000:9000","9001:9001"]
+    ports: ["9000:9000", "9001:9001"]
     volumes:
       - /home/glazole/msij-project/minio:/data
 
@@ -29,6 +30,7 @@ services:
     image: local/spark:3.5.0-aws34-ice161
     container_name: spark-master
     hostname: spark-master
+    networks: [spark_network]
     depends_on:
       minio:
         condition: service_healthy
@@ -45,19 +47,18 @@ services:
       AWS_SECRET_ACCESS_KEY: minio_minio
       AWS_EC2_METADATA_DISABLED: "true"
     ports:
-      - "7077:7077"   # Spark master
-      - "8080:8080"   # Spark UI (master)
+      - "7077:7077"
+      - "8080:8080"
     volumes:
       - /home/glazole/msij-project/conf/spark:/opt/bitnami/spark/conf
       - /home/glazole/msij-project/work:/work
       - /mnt/e/crpt_2025:/win_df
-  
 
   spark-worker:
-    # build: ./docker/spark
     image: local/spark:3.5.0-aws34-ice161
     container_name: spark-worker
     hostname: spark-worker
+    networks: [spark_network]
     depends_on:
       spark-master:
         condition: service_started
@@ -75,7 +76,7 @@ services:
           cpus: '2.0'
           memory: 5G
     ports:
-      - "8081:8081"   # UI воркера (опционально)
+      - "8081:8081"
     volumes:
       - /home/glazole/msij-project/conf/spark:/opt/bitnami/spark/conf
       - /home/glazole/msij-project/work:/work
@@ -86,6 +87,7 @@ services:
     image: local/jupyter-spark:3.5.0-aws34-ice161
     container_name: jupyter
     hostname: jupyter
+    networks: [spark_network]
     depends_on:
       spark-master:
         condition: service_started
@@ -93,8 +95,7 @@ services:
       - "8888:8888"
       - "4040:4040"
       - "4041:4041"
-      - "4042:4042"
-    working_dir: /work  
+    working_dir: /work
     environment:
       JUPYTER_TOKEN: "lab"
       AWS_ACCESS_KEY_ID: minio
@@ -114,20 +115,83 @@ services:
     command: >
       bash -c "
         mkdir -p /work/.jupyter/lab/workspaces /work/.jupyter/lab/user-settings /work/.jupyter/runtime &&
-      chown -R 1001:1001 /work/.jupyter &&
-      jupyter lab --ip=0.0.0.0 --no-browser
+        chown -R 1001:1001 /work/.jupyter &&
+        jupyter lab --ip=0.0.0.0 --no-browser
         --NotebookApp.notebook_dir=/work
-        --notebook-dir=/work
-        --ServerApp.root_dir=/work
-        --ServerApp.workspaces_dir=/work/.jupyter/lab/workspaces
-        --ServerApp.user_settings_dir=/work/.jupyter/lab/user-settings
-        --ServerApp.runtime_dir=/work/.jupyter/runtime
         --ServerApp.token=$$JUPYTER_TOKEN
       "
     volumes:
       - /home/glazole/msij-project/conf/spark:/opt/bitnami/spark/conf
       - /home/glazole/msij-project/work:/work
 
+  # === PostgreSQL для Iceberg Catalog ===
+  postgresql:
+    image: postgres:15-alpine
+    container_name: postgresql
+    hostname: postgresql
+    networks: [spark_network]
+    environment:
+      POSTGRES_DB: iceberg_catalog
+      POSTGRES_USER: iceberg
+      POSTGRES_PASSWORD: iceberg
+    ports:
+      - "5432:5432"
+    volumes:
+      - pg_iceberg_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U iceberg -d iceberg_catalog"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # === Iceberg REST Catalog ===
+  iceberg-rest:
+    image: tabulario/iceberg-rest:1.6.0
+    container_name: iceberg-rest
+    hostname: iceberg-rest
+    networks: [spark_network]
+    depends_on:
+      postgresql:
+        condition: service_healthy
+      spark-master:
+        condition: service_started
+    ports:
+      - "8181:8181"
+    environment:
+      # --- Каталог и хранилище
+      CATALOG_WAREHOUSE: s3a://warehouse/iceberg/
+      CATALOG_IO__IMPL: org.apache.iceberg.aws.s3.S3FileIO
+      CATALOG_S3_ENDPOINT: http://minio:9000
+      CATALOG_S3_PATH_STYLE_ACCESS: "true"
+      CATALOG_S3_ACCESS_KEY: minio
+      CATALOG_S3_SECRET_KEY: minio_minio
+      CATALOG_S3_CONNECTION_SSL_ENABLED: "false"
+
+      # --- JDBC Catalog (PostgreSQL как метахранилище)
+      CATALOG_URI: jdbc:postgresql://postgresql:5432/iceberg_catalog
+      CATALOG_JDBC_DRIVER: org.postgresql.Driver
+      CATALOG_JDBC_USER: iceberg
+      CATALOG_JDBC_PASSWORD: iceberg
+
+      # --- AWS совместимость
+      AWS_ENDPOINT_URL: http://minio:9000
+      AWS_S3_ENDPOINT: http://minio:9000
+      AWS_REGION: us-east-1
+      AWS_DEFAULT_REGION: us-east-1
+      AWS_ACCESS_KEY_ID: minio
+      AWS_SECRET_ACCESS_KEY: minio_minio
+
+      LOG_LEVEL: INFO
+
+    volumes:
+      - /home/glazole/msij-project/conf/spark:/opt/spark/conf
+      - /home/glazole/msij-project/work:/work
+
 volumes:
-  spark-logs:
   minio-data:
+  spark-logs:
+  pg_iceberg_data:
+
+networks:
+  spark_network:
+    driver: bridge
