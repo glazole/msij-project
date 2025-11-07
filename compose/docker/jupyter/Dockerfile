@@ -22,8 +22,8 @@ RUN set -eux; \
     #   https://repo1.maven.org/maven2/com/amazonaws/aws-java-sdk-bundle/1.12.517/aws-java-sdk-bundle-1.12.517.jar && \
     # curl -fL -o $SPARK_HOME/jars/iceberg-spark-runtime-3.5_2.12-1.6.1.jar \
     #   https://repo1.maven.org/maven2/org/apache/iceberg/iceberg-spark-runtime-3.5_2.12/1.6.1/iceberg-spark-runtime-3.5_2.12-1.6.1.jar && \
-    # curl -fL -o $SPARK_HOME/jars/postgresql-42.7.2.jar \
-    #   https://jdbc.postgresql.org/download/postgresql-42.7.2.jar && \
+    curl -fL -o $SPARK_HOME/jars/postgresql-42.7.2.jar \
+      https://jdbc.postgresql.org/download/postgresql-42.7.2.jar && \
     # --- AWS SDK v2 (нужно для org.apache.iceberg.aws.s3.S3FileIO)
     # Версия AWS SDK v2.25.48 совместима с Iceberg 1.6.1
     curl -fL -o $SPARK_HOME/jars/bundle-2.25.48.jar \
