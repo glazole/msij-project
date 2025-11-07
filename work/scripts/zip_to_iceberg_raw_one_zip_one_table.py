@@ -46,7 +46,7 @@ if __name__ == "__main__":
     spark.sql("CREATE NAMESPACE IF NOT EXISTS ice.bronze")
 
     spark.sql("""
-        CREATE TABLE IF NOT EXISTS ice.bronze.crpt_load_log (
+        CREATE TABLE IF NOT EXISTS ice.bronze.load_log (
           zip_name string,
           loaded_at timestamp
         ) USING iceberg
@@ -83,7 +83,7 @@ if __name__ == "__main__":
 
             esc = name.replace("'", "''")
             already = spark.sql(
-                f"SELECT 1 FROM ice.bronze.crpt_load_log WHERE zip_name='{esc}' LIMIT 1"
+                f"SELECT 1 FROM ice.bronze.load_log WHERE zip_name='{esc}' LIMIT 1"
             ).count() > 0
             if already:
                 print(f"[SKIP {i}/{total}] {name}: already logged", flush=True)
@@ -138,7 +138,7 @@ if __name__ == "__main__":
 
             (spark.createDataFrame([(name,)], ["zip_name"])
                 .withColumn("loaded_at", current_timestamp())
-                .writeTo("ice.bronze.crpt_load_log").append())
+                .writeTo("ice.bronze.load_log").append())
 
             processed += 1
             print(f"[DONE  {i}/{total}] {name}", flush=True)
@@ -156,7 +156,7 @@ if __name__ == "__main__":
             except Exception:
                 pass
 
-    logged = spark.sql("SELECT COUNT(*) AS c FROM ice.bronze.crpt_load_log").first()["c"]
+    logged = spark.sql("SELECT COUNT(*) AS c FROM ice.bronze.load_log").first()["c"]
     print("===== SUMMARY =====", flush=True)
     print(f"found      : {total}", flush=True)
     print(f"processed  : {processed}", flush=True)
