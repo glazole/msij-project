@@ -197,6 +197,9 @@ services:
       AWS_ACCESS_KEY_ID: minio
       AWS_SECRET_ACCESS_KEY: minio_minio
 
+      CATALOG_AWS_ENDPOINT_URL: http://minio:9000
+
+
       LOG_LEVEL: INFO
 
     volumes:
