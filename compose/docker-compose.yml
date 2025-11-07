@@ -141,10 +141,19 @@ services:
     container_name: postgresql
     hostname: postgresql
     networks: [spark_network]
+    environment:
+      POSTGRES_DB: iceberg_catalog
+      POSTGRES_USER: iceberg
+      POSTGRES_PASSWORD: iceberg
     ports:
       - "5432:5432"
     volumes:
       - pg_iceberg_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U iceberg -d iceberg_catalog"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   # === Iceberg REST Catalog ===
   iceberg-rest:
@@ -171,7 +180,7 @@ services:
       CATALOG_JDBC_DRIVER: org.postgresql.Driver
       CATALOG_JDBC_USER: iceberg
       CATALOG_JDBC_PASSWORD: iceberg
-      CATALOG_URI: jdbc:postgresql://postgresql:5432/iceberg_catalog
+      CATALOG_JDBC_URI: jdbc:postgresql://postgresql:5432/iceberg_catalog
       # === Настройки доступа к MinIO ===
       CATALOG_S3_ENDPOINT: http://minio:9000
       CATALOG_S3_PATH_STYLE_ACCESS: "true"
