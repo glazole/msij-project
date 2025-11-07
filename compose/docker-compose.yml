@@ -180,7 +180,7 @@ services:
       CATALOG_JDBC_DRIVER: org.postgresql.Driver
       CATALOG_JDBC_USER: iceberg
       CATALOG_JDBC_PASSWORD: iceberg
-      CATALOG_JDBC_URI: jdbc:postgresql://postgresql:5432/iceberg_catalog
+      CATALOG_URI: jdbc:postgresql://postgresql:5432/iceberg_catalog
       # === Настройки доступа к MinIO ===
       CATALOG_S3_ENDPOINT: http://minio:9000
       CATALOG_S3_PATH_STYLE_ACCESS: "true"
