@@ -190,6 +190,7 @@ services:
       CATALOG_S3_SECRET_KEY: minio_minio
       CATALOG_S3_CONNECTION_SSL_ENABLED: "false"
       CATALOG_S3_REGION: us-east-1
+      CATALOG_S3_VIRTUAL_HOSTED_STYLE: "false"
       # --- AWS совместимость (опционально, не мешает)
       AWS_ENDPOINT_URL: http://minio:9000
       AWS_S3_ENDPOINT: http://minio:9000
