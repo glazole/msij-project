@@ -203,6 +203,9 @@ services:
       LOG_LEVEL: INFO
 
     volumes:
+      - /home/glazole/msij-project/jars/bundle-2.25.48.jar:/usr/lib/iceberg-rest/libs/bundle-2.25.48.jar
+      - /home/glazole/msij-project/jars/s3-2.25.48.jar:/usr/lib/iceberg-rest/libs/s3-2.25.48.jar
+      - /home/glazole/msij-project/jars/url-connection-client-2.25.48.jar:/usr/lib/iceberg-rest/libs/url-connection-client-2.25.48.jar
       - /home/glazole/msij-project/conf/spark:/opt/spark/conf
       - /home/glazole/msij-project/work:/work
 
