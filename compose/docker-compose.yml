@@ -30,7 +30,7 @@ services:
 
   spark-master:
     build: ./docker/spark
-    image: local/spark-rest:3.5.0-aws34-ice161-rest160
+    image: glazole/spark-master-rest:custom
     container_name: spark-master
     hostname: spark-master
     networks: [spark_network]
@@ -60,7 +60,7 @@ services:
       - /mnt/e/crpt_2025:/win_df
 
   spark-worker:
-    image: local/spark-rest:3.5.0-aws34-ice161-rest160
+    image: glazole/spark-master-rest:custom
     container_name: spark-worker
     hostname: spark-worker
     networks: [spark_network]
@@ -90,7 +90,7 @@ services:
       - /mnt/e/crpt_2025:/win_df
 
   jupyter:
-    image: local/jupyter-spark-rest:3.5.0-aws34-ice161-rest160
+    image: glazole/spark-jupyter-rest:custom
     build:
       context: .
       dockerfile: docker/jupyter/Dockerfile
@@ -160,6 +160,11 @@ services:
     image: tabulario/iceberg-rest:1.6.0
     container_name: iceberg-rest
     hostname: iceberg-rest
+    healthcheck:
+      test: ["CMD-SHELL", "pgrep -f 'iceberg-rest' > /dev/null || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
     networks: [spark_network]
     depends_on:
       postgresql:
@@ -170,13 +175,12 @@ services:
       - "8181:8181"
     environment:
       # === Основные параметры каталога ===
-      CATALOG_WAREHOUSE: s3://warehouse/iceberg/
+      CATALOG_WAREHOUSE: s3a://warehouse/iceberg/
       CATALOG_IO_IMPL: org.apache.iceberg.aws.s3.S3FileIO
       CATALOG_CATALOG_IMPL: org.apache.iceberg.jdbc.JdbcCatalog
       CATALOG_JDBC_DRIVER: org.postgresql.Driver
       CATALOG_JDBC_USER: iceberg
       CATALOG_JDBC_PASSWORD: iceberg
-      CATALOG_JDBC_SCHEMA_VERSION: V1
       CATALOG_URI: jdbc:postgresql://postgresql:5432/iceberg_catalog
       # === Настройки доступа к MinIO ===
       CATALOG_S3_ENDPOINT: http://minio:9000
@@ -185,13 +189,6 @@ services:
       CATALOG_S3_SECRET_KEY: minio_minio
       CATALOG_S3_CONNECTION_SSL_ENABLED: "false"
       CATALOG_S3_REGION: us-east-1
-      # === Дублируем без префикса (для S3FileIO в некоторых контекстах) ===
-      S3_ENDPOINT: http://minio:9000
-      S3_ACCESS_KEY: minio
-      S3_SECRET_KEY: minio_minio
-      S3_PATH_STYLE_ACCESS: "true"
-      S3_CONNECTION_SSL_ENABLED: "false"
-      S3_REGION: us-east-1
       # --- AWS совместимость (опционально, не мешает)
       AWS_ENDPOINT_URL: http://minio:9000
       AWS_S3_ENDPOINT: http://minio:9000
@@ -206,6 +203,7 @@ services:
       - /home/glazole/msij-project/jars/bundle-2.25.48.jar:/usr/lib/iceberg-rest/libs/bundle-2.25.48.jar
       - /home/glazole/msij-project/jars/s3-2.25.48.jar:/usr/lib/iceberg-rest/libs/s3-2.25.48.jar
       - /home/glazole/msij-project/jars/url-connection-client-2.25.48.jar:/usr/lib/iceberg-rest/libs/url-connection-client-2.25.48.jar
+      - /home/glazole/msij-project/jars/postgresql-42.7.2.jar:/usr/lib/iceberg-rest/libs/postgresql-42.7.2.jar
       - /home/glazole/msij-project/conf/spark:/opt/spark/conf
       - /home/glazole/msij-project/work:/work
 
