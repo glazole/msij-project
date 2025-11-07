@@ -1,6 +1,7 @@
 services:
   minio:
     image: minio/minio:latest
+    container_name: minio
     command: server /data --console-address ":9001"
     healthcheck:
       test: ["CMD", "curl", "-f", "http://minio:9000/minio/health/ready"]
@@ -16,6 +17,7 @@ services:
 
   mc:
     image: minio/mc:latest
+    container_name: minio-client
     depends_on:
       minio:
         condition: service_healthy
