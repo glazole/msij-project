@@ -22,3 +22,4 @@ work/notebooks/.ipynb_checkpoints
 work/scripts/.ipynb_checkpoints
 .gitignore
 .dockerignore
+work/scripts/parquet_to_ice.py
