@@ -141,19 +141,10 @@ services:
     container_name: postgresql
     hostname: postgresql
     networks: [spark_network]
-    environment:
-      POSTGRES_DB: iceberg_catalog
-      POSTGRES_USER: iceberg
-      POSTGRES_PASSWORD: iceberg
     ports:
       - "5432:5432"
     volumes:
       - pg_iceberg_data:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U iceberg -d iceberg_catalog"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
 
   # === Iceberg REST Catalog ===
   iceberg-rest:
