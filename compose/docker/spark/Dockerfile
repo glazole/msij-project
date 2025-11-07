@@ -21,7 +21,8 @@ ADD https://repo1.maven.org/maven2/software/amazon/awssdk/url-connection-client/
 # GraphFrames для Spark 3.5 / Scala 2.12
 ADD https://repo1.maven.org/maven2/io/graphframes/graphframes-spark3_2.12/0.9.0-spark3.5/graphframes-spark3_2.12-0.9.0-spark3.5.jar \
     $SPARK_HOME/jars/graphframes-spark3_2.12-0.9.0-spark3.5.jar
-
+ADD https://jdbc.postgresql.org/download/postgresql-42.7.2.jar \
+    $SPARK_HOME/jars/postgresql-42.7.2.jar
 
 RUN chown -R 1001:0 "$SPARK_HOME/jars"
 # вернём права и пользователя
