@@ -187,9 +187,9 @@ services:
       CATALOG_WAREHOUSE: s3://warehouse/iceberg/
       CATALOG_IO__IMPL: org.apache.iceberg.aws.s3.S3FileIO
 
-      # === JDBC (PostgreSQL) ===
-      CATALOG_JDBC_URI: jdbc:postgresql://postgresql:5432/iceberg_catalog
-      CATALOG_JDBC_DRIVER: org.postgresql.Driver
+      # === JDBC Catalog реализация ===
+      CATALOG_IMPL: org.apache.iceberg.jdbc.JdbcCatalog
+      CATALOG_URI: jdbc:postgresql://postgresql:5432/iceberg_catalog
       CATALOG_JDBC_USER: iceberg
       CATALOG_JDBC_PASSWORD: iceberg
 
