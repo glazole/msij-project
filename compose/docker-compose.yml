@@ -167,6 +167,7 @@ services:
   # === Iceberg REST Catalog ===
   iceberg-rest:
     image: apache/iceberg-rest-fixture
+    command: ["sleep", "infinity"]
     container_name: iceberg-rest
     hostname: iceberg-rest
     healthcheck:
