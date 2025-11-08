@@ -167,7 +167,6 @@ services:
   # === Iceberg REST Catalog ===
   iceberg-rest:
     image: apache/iceberg-rest-fixture
-    # command: ["sleep", "infinity"]
     container_name: iceberg-rest
     hostname: iceberg-rest
     healthcheck:
@@ -187,30 +186,19 @@ services:
       # === Основные параметры каталога ===
       CATALOG_WAREHOUSE: s3://warehouse/iceberg/
       CATALOG_IO__IMPL: org.apache.iceberg.aws.s3.S3FileIO
-
       # === JDBC Catalog реализация ===
       CATALOG_IMPL: org.apache.iceberg.jdbc.JdbcCatalog
       CATALOG_URI: jdbc:postgresql://postgresql:5432/iceberg_catalog
-      # CATALOG_JDBC_URI: jdbc:postgresql://postgresql:5432/iceberg_catalog
       CATALOG_JDBC_USER: iceberg
       CATALOG_JDBC_PASSWORD: iceberg
-      CATALOG_JDBC_SCHEMA_VERSION: V1
-      CATALOG_JDBC_STRICT_MODE: "true"
-
       # === Доступ к MinIO / S3 ===
       CATALOG_S3_ENDPOINT: http://minio:9000
-
       # === AWS-совместимые параметры ===
       AWS_REGION: us-east-1
       AWS_ACCESS_KEY_ID: minio
       AWS_SECRET_ACCESS_KEY: minio_minio
-
       LOG_LEVEL: INFO
-
     volumes:
-      # - /home/glazole/msij-project/jars/bundle-2.25.48.jar:/usr/lib/iceberg-rest/libs/bundle-2.25.48.jar
-      # - /home/glazole/msij-project/jars/s3-2.25.48.jar:/usr/lib/iceberg-rest/libs/s3-2.25.48.jar
-      # - /home/glazole/msij-project/jars/url-connection-client-2.25.48.jar:/usr/lib/iceberg-rest/libs/url-connection-client-2.25.48.jar
       - /home/glazole/msij-project/jars/postgresql-42.7.2.jar:/app/libs/postgresql-42.7.2.jar
       - /home/glazole/msij-project/conf/spark:/opt/spark/conf
       - /home/glazole/msij-project/work:/work
