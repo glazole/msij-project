@@ -5,23 +5,31 @@ services:
     command: server /data --console-address ":9001"
     healthcheck:
       test: ["CMD", "curl", "-f", "http://minio:9000/minio/health/ready"]
-    networks: [spark_network]
     environment:
+      MINIO_DOMAIN: minio
       MINIO_ROOT_USER: minio
       MINIO_ROOT_PASSWORD: minio_minio
       AWS_REGION: us-east-1
       AWS_DEFAULT_REGION: us-east-1
+    networks:
+      iceberg_net:
+        aliases:
+          - warehouse.minio
     ports: ["9000:9000", "9001:9001"]
     volumes:
       - /home/glazole/msij-project/minio:/data
 
   mc:
     image: minio/mc:latest
-    container_name: minio-client
+    container_name: mc
     depends_on:
       minio:
         condition: service_healthy
-    networks: [spark_network]
+    networks: [iceberg_net]
+    environment:
+      AWS_ACCESS_KEY_ID: minio
+      AWS_SECRET_ACCESS_KEY: minio_minio
+      AWS_REGION: us-east-1
     entrypoint: >
       /bin/sh -c "
       sleep 3 &&
@@ -35,7 +43,7 @@ services:
     image: glazole/spark-master-rest:custom
     container_name: spark-master
     hostname: spark-master
-    networks: [spark_network]
+    networks: [iceberg_net]
     depends_on:
       minio:
         condition: service_healthy
@@ -65,7 +73,7 @@ services:
     image: glazole/spark-master-rest:custom
     container_name: spark-worker
     hostname: spark-worker
-    networks: [spark_network]
+    networks: [iceberg_net]
     depends_on:
       spark-master:
         condition: service_started
@@ -98,7 +106,7 @@ services:
       dockerfile: docker/jupyter/Dockerfile
     container_name: jupyter
     hostname: jupyter
-    networks: [spark_network]
+    networks: [iceberg_net]
     depends_on:
       spark-master:
         condition: service_started
@@ -142,7 +150,7 @@ services:
     image: postgres:15-alpine
     container_name: postgresql
     hostname: postgresql
-    networks: [spark_network]
+    networks: [iceberg_net]
     environment:
       POSTGRES_DB: iceberg_catalog
       POSTGRES_USER: iceberg
@@ -159,7 +167,7 @@ services:
 
   # === Iceberg REST Catalog ===
   iceberg-rest:
-    image: tabulario/iceberg-rest:1.6.0
+    image: apache/iceberg-rest-fixture
     container_name: iceberg-rest
     hostname: iceberg-rest
     healthcheck:
@@ -167,7 +175,7 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
-    networks: [spark_network]
+    networks: [iceberg_net]
     depends_on:
       postgresql:
         condition: service_healthy
@@ -176,8 +184,14 @@ services:
     ports:
       - "8181:8181"
     environment:
+      # AWS_ACCESS_KEY_ID: minio
+      # AWS_SECRET_ACCESS_KEY: minio_minio
+      # AWS_REGION: us-east-1
+      # CATALOG_WAREHOUSE: s3://warehouse/iceberg/
+      # CATALOG_IO__IMPL: org.apache.iceberg.aws.s3.S3FileIO
+      # CATALOG_S3_ENDPOINT: http://minio:9000
       # === Основные параметры каталога ===
-      CATALOG_WAREHOUSE: s3a://warehouse/iceberg/
+      CATALOG_WAREHOUSE: s3://warehouse/iceberg/
       CATALOG_IO__IMPL: org.apache.iceberg.aws.s3.S3FileIO
       CATALOG_JDBC_DRIVER: org.postgresql.Driver
       CATALOG_JDBC_USER: iceberg
@@ -214,5 +228,5 @@ volumes:
   pg_iceberg_data:
 
 networks:
-  spark_network:
+  iceberg_net:
     driver: bridge
