@@ -1,26 +1,12 @@
-# #!/bin/bash
-# echo "Fixing permissions..."
-# sudo /home/glazole/msij-project/scripts/fix-permissions.sh
-
-# echo "Starting Docker Compose..."
-# cd /home/glazole/msij-project/compose
-# docker compose up -d
-
-# echo "Project started successfully!"
-# echo "Jupyter: http://localhost:8888"
-# echo "MinIO: http://localhost:9001"
-# echo "Spark Master: http://localhost:8080"
-
 #!/bin/bash
-
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
-SCRIPTS_DIR="$PROJECT_ROOT/scripts"
+FIX_PERMISSIONS_SCRIPT="$PROJECT_ROOT/scripts/fix-permissions.sh"
 
 # Функция для исправления прав
 fix_permissions() {
     echo "Fixing permissions..."
-    sudo /home/glazole/msij-project/scripts/fix-permissions.sh
+    sudo "$FIX_PERMISSIONS_SCRIPT"
     echo "Permissions fixed successfully"
 }
 
