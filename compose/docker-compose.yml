@@ -167,7 +167,7 @@ services:
   # === Iceberg REST Catalog ===
   iceberg-rest:
     image: apache/iceberg-rest-fixture
-    command: ["sleep", "infinity"]
+    # command: ["sleep", "infinity"]
     container_name: iceberg-rest
     hostname: iceberg-rest
     healthcheck:
@@ -214,6 +214,9 @@ services:
       - /home/glazole/msij-project/jars/postgresql-42.7.2.jar:/app/libs/postgresql-42.7.2.jar
       - /home/glazole/msij-project/conf/spark:/opt/spark/conf
       - /home/glazole/msij-project/work:/work
+    command: >
+      java -cp "/usr/lib/iceberg-rest/iceberg-rest-adapter.jar:/app/libs/postgresql-42.7.2.jar" 
+      org.apache.iceberg.rest.RESTCatalogServer
 
 volumes:
   minio-data:
