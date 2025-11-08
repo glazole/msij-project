@@ -252,6 +252,16 @@ echo "Permissions fixed successfully"
 sudo chmod +x /home/glazole/msij-project/scripts/fix-permissions.sh
 ```
 
+ Проверим, что скрипт теперь исполняемый
+```bash
+ls -la /home/glazole/msij-project/scripts/fix-permissions.sh
+```
+```bash
+# Должны видеть что-то вроде:
+# -rwxr-xr-x 1 glazole glazole 245 Nov  8 21:30 /home/glazole/msij-project/scripts/fix-permissions.sh
+# Обратите внимание на 'x' в правах доступа
+```
+
 📌 **Почему это важно:**
 Контейнеры запускаются от пользователя `uid=1001`, а директории монтируются от `root`. Без изменения прав возможны ошибки записи:
 
