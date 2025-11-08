@@ -190,7 +190,7 @@ services:
       # === JDBC Catalog реализация ===
       CATALOG_IMPL: org.apache.iceberg.jdbc.JdbcCatalog
       CATALOG_URI: jdbc:postgresql://postgresql:5432/iceberg_catalog
-      CATALOG_JDBC_URI: jdbc:postgresql://postgresql:5432/iceberg_catalog
+      # CATALOG_JDBC_URI: jdbc:postgresql://postgresql:5432/iceberg_catalog
       CATALOG_JDBC_USER: iceberg
       CATALOG_JDBC_PASSWORD: iceberg
       CATALOG_JDBC_SCHEMA_VERSION: V1
@@ -210,7 +210,7 @@ services:
       # - /home/glazole/msij-project/jars/bundle-2.25.48.jar:/usr/lib/iceberg-rest/libs/bundle-2.25.48.jar
       # - /home/glazole/msij-project/jars/s3-2.25.48.jar:/usr/lib/iceberg-rest/libs/s3-2.25.48.jar
       # - /home/glazole/msij-project/jars/url-connection-client-2.25.48.jar:/usr/lib/iceberg-rest/libs/url-connection-client-2.25.48.jar
-      - /home/glazole/msij-project/jars/postgresql-42.7.2.jar:/usr/lib/iceberg-rest/libs/postgresql-42.7.2.jar
+      - /home/glazole/msij-project/jars/postgresql-42.7.2.jar:/app/libs/postgresql-42.7.2.jar
       - /home/glazole/msij-project/conf/spark:/opt/spark/conf
       - /home/glazole/msij-project/work:/work
 
