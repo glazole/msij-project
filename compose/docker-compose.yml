@@ -80,18 +80,18 @@ services:
     environment:
       SPARK_MODE: worker
       SPARK_MASTER_URL: spark://spark-master:7077
-      SPARK_WORKER_MEMORY: 6G
-      SPARK_WORKER_CORES: 4
       AWS_REGION: us-east-1
       AWS_DEFAULT_REGION: us-east-1
       AWS_ACCESS_KEY_ID: minio
       AWS_SECRET_ACCESS_KEY: minio_minio
       AWS_EC2_METADATA_DISABLED: "true"
+      SPARK_WORKER_CORES: 4
+      SPARK_WORKER_MEMORY: 8G
     deploy:
       resources:
         limits:
           cpus: '4.0'
-          memory: 6G
+          memory: 10G
     ports:
       - "8081:8081"
     volumes:
