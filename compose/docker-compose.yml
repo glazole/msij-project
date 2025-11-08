@@ -190,6 +190,7 @@ services:
       # === JDBC Catalog реализация ===
       CATALOG_IMPL: org.apache.iceberg.jdbc.JdbcCatalog
       CATALOG_URI: jdbc:postgresql://postgresql:5432/iceberg_catalog
+      CATALOG_JDBC_URI: jdbc:postgresql://postgresql:5432/iceberg_catalog
       CATALOG_JDBC_USER: iceberg
       CATALOG_JDBC_PASSWORD: iceberg
       CATALOG_JDBC_SCHEMA_VERSION: V1
