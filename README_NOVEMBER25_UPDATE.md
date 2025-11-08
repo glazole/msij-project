@@ -249,7 +249,7 @@ echo "Permissions fixed successfully"
 📘 Сделать исполняемым:
 
 ```bash
-chmod +x fix-permissions.sh
+sudo chmod +x /home/glazole/msij-project/scripts/fix-permissions.sh
 ```
 
 📌 **Почему это важно:**
@@ -404,7 +404,7 @@ esac
 📘 Сделать исполняемым:
 
 ```bash
-chmod +x start-project.sh
+sudo chmod +x start-project.sh
 ```
 
 
