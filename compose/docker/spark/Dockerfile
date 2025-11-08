@@ -24,7 +24,7 @@ ADD https://repo1.maven.org/maven2/io/graphframes/graphframes-spark3_2.12/0.9.0-
 ADD https://jdbc.postgresql.org/download/postgresql-42.7.2.jar \
     $SPARK_HOME/jars/postgresql-42.7.2.jar
 
-RUN chown -R 1001:0 "$SPARK_HOME/jars"
+RUN chown -R 1000:0 "$SPARK_HOME/jars"
 # вернём права и пользователя
-USER 1001
+USER 1000
 

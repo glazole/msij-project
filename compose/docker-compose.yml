@@ -2,7 +2,7 @@ services:
   minio:
     image: minio/minio:latest
     container_name: minio
-    command: server /data --console-address ":9001"
+    command: ["server", "/data", "--console-address", ":9001"]
     healthcheck:
       test: ["CMD", "curl", "-f", "http://minio:9000/minio/health/ready"]
     environment:
@@ -80,8 +80,8 @@ services:
     environment:
       SPARK_MODE: worker
       SPARK_MASTER_URL: spark://spark-master:7077
-      SPARK_WORKER_MEMORY: 4G
-      SPARK_WORKER_CORES: 2
+      SPARK_WORKER_MEMORY: 6G
+      SPARK_WORKER_CORES: 4
       AWS_REGION: us-east-1
       AWS_DEFAULT_REGION: us-east-1
       AWS_ACCESS_KEY_ID: minio
@@ -90,8 +90,8 @@ services:
     deploy:
       resources:
         limits:
-          cpus: '2.0'
-          memory: 5G
+          cpus: '4.0'
+          memory: 6G
     ports:
       - "8081:8081"
     volumes:
@@ -101,6 +101,7 @@ services:
 
   jupyter:
     image: glazole/spark-jupyter-rest:custom
+    user: "${UID:-1000}:${GID:-1000}"
     build:
       context: .
       dockerfile: docker/jupyter/Dockerfile
@@ -113,7 +114,6 @@ services:
     ports:
       - "8888:8888"
       - "4040:4040"
-      - "4041:4041"
     working_dir: /work
     environment:
       JUPYTER_TOKEN: "lab"
@@ -136,7 +136,6 @@ services:
     command: >
       bash -c "
         mkdir -p /work/.jupyter/lab/workspaces /work/.jupyter/lab/user-settings /work/.jupyter/runtime &&
-        chown -R 1001:1001 /work/.jupyter &&
         jupyter lab --ip=0.0.0.0 --no-browser
         --NotebookApp.notebook_dir=/work
         --ServerApp.token=$$JUPYTER_TOKEN
@@ -197,7 +196,7 @@ services:
       # === Доступ к MinIO / S3 ===
       CATALOG_S3_ENDPOINT: http://minio:9000
 
-      # === AWS-совместимые параметры (опционально) ===
+      # === AWS-совместимые параметры ===
       AWS_REGION: us-east-1
       AWS_ACCESS_KEY_ID: minio
       AWS_SECRET_ACCESS_KEY: minio_minio
@@ -205,10 +204,10 @@ services:
       LOG_LEVEL: INFO
 
     volumes:
-      - /home/glazole/msij-project/jars/bundle-2.25.48.jar:/usr/lib/iceberg-rest/libs/bundle-2.25.48.jar
-      - /home/glazole/msij-project/jars/s3-2.25.48.jar:/usr/lib/iceberg-rest/libs/s3-2.25.48.jar
-      - /home/glazole/msij-project/jars/url-connection-client-2.25.48.jar:/usr/lib/iceberg-rest/libs/url-connection-client-2.25.48.jar
-      - /home/glazole/msij-project/jars/postgresql-42.7.2.jar:/usr/lib/iceberg-rest/libs/postgresql-42.7.2.jar
+      # - /home/glazole/msij-project/jars/bundle-2.25.48.jar:/usr/lib/iceberg-rest/libs/bundle-2.25.48.jar
+      # - /home/glazole/msij-project/jars/s3-2.25.48.jar:/usr/lib/iceberg-rest/libs/s3-2.25.48.jar
+      # - /home/glazole/msij-project/jars/url-connection-client-2.25.48.jar:/usr/lib/iceberg-rest/libs/url-connection-client-2.25.48.jar
+      # - /home/glazole/msij-project/jars/postgresql-42.7.2.jar:/usr/lib/iceberg-rest/libs/postgresql-42.7.2.jar
       - /home/glazole/msij-project/conf/spark:/opt/spark/conf
       - /home/glazole/msij-project/work:/work
 
