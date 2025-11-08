@@ -187,32 +187,25 @@ services:
       # === Основные параметры каталога ===
       CATALOG_WAREHOUSE: s3://warehouse/iceberg/
       CATALOG_IO__IMPL: org.apache.iceberg.aws.s3.S3FileIO
-      CATALOG__CATALOG-IMPL: org.apache.iceberg.jdbc.JdbcCatalog
-
-      # === JDBC (PostgreSQL) ===
-      CATALOG__JDBC__URI: jdbc:postgresql://postgresql:5432/iceberg_catalog
-      CATALOG__JDBC__DRIVER: org.postgresql.Driver
-      CATALOG__JDBC__USER: iceberg
-      CATALOG__JDBC__PASSWORD: iceberg
-      CATALOG__JDBC__STRICT-MODE: "true"
-
-      # === Доступ к MinIO / S3 ===
-      CATALOG__S3__ENDPOINT: http://minio:9000
-      CATALOG__S3__ACCESS-KEY: minio
-      CATALOG__S3__SECRET-KEY: minio_minio
-      CATALOG__S3__PATH-STYLE-ACCESS: "true"
-      CATALOG__S3__CONNECTION-SSL-ENABLED: "false"
-      CATALOG__S3__REGION: us-east-1
-      CATALOG__S3__VIRTUAL-HOSTED-STYLE: "false"
-
-      # === AWS-совместимые параметры (опционально) ===
+      CATALOG_JDBC_DRIVER: org.postgresql.Driver
+      CATALOG_JDBC_USER: iceberg
+      CATALOG_JDBC_PASSWORD: iceberg
+      CATALOG_JDBC_URI: jdbc:postgresql://postgresql:5432/iceberg_catalog
+      # === Настройки доступа к MinIO ===
+      CATALOG_S3_ENDPOINT: http://minio:9000
+      CATALOG_S3_PATH_STYLE_ACCESS: "true"
+      CATALOG_S3_ACCESS_KEY: minio
+      CATALOG_S3_SECRET_KEY: minio_minio
+      CATALOG_S3_CONNECTION_SSL_ENABLED: "false"
+      CATALOG_S3_REGION: us-east-1
+      CATALOG_S3_VIRTUAL_HOSTED_STYLE: "false"
+      # --- AWS совместимость (опционально, не мешает)
       AWS_ENDPOINT_URL: http://minio:9000
       AWS_S3_ENDPOINT: http://minio:9000
       AWS_REGION: us-east-1
       AWS_DEFAULT_REGION: us-east-1
       AWS_ACCESS_KEY_ID: minio
       AWS_SECRET_ACCESS_KEY: minio_minio
-
       LOG_LEVEL: INFO
 
     volumes:
