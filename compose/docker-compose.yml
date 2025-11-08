@@ -101,7 +101,7 @@ services:
 
   jupyter:
     image: glazole/spark-jupyter-rest:custom
-    user: "${UID:-1000}:${GID:-1000}"
+    user: "1001:1001"
     build:
       context: .
       dockerfile: docker/jupyter/Dockerfile

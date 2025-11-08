@@ -36,4 +36,4 @@ RUN set -eux; \
       https://repo1.maven.org/maven2/io/graphframes/graphframes-spark3_2.12/0.9.0-spark3.5/graphframes-spark3_2.12-0.9.0-spark3.5.jar
 
 # вернём права и пользователя
-USER 1000
+USER 1001
